@@ -95,7 +95,7 @@
       }
       .playbtn {
         border-radius: 50px;
-        background-color: aqua;
+        background-color: rgba(0, 132, 255, 0.5);
         border: none;
         color: rgb(0, 0, 0);
         cursor: pointer;
@@ -109,19 +109,33 @@
         font-size: 50px;
         -webkit-app-region: no-drag;
         z-index: 3;
+        backdrop-filter: blur(5px);
       }
       .playbtn:hover {
         border-radius: 60px;
-        background-color: rgb(43, 226, 147);
+        background-color: rgba(43, 226, 147, 0.3);
         transform: scale(1.1);
         color: white;
         box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
       }
       .playbtn:active {
+        background-color: rgba(0, 149, 255, 0.4);
         border-radius: 20px;
         transform: scale(0.8);
         color: rgb(42, 42, 42);
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(3px);
+      }
+      .playbtn::after {
+        content: "🖐️";
+        position: absolute;
+        opacity: 0;
+        transition: all 0.3s;
+      }
+      .playbtn:active::after {
+        opacity: 1;
+        transform: rotate(20deg);
       }
       .clsbtn {
         background: none;
@@ -188,8 +202,9 @@
       }
       .drag-area {
         position: absolute;
-        background-color: rgb(185, 185, 185);
+        background-color: rgba(255, 255, 255, 0.5);
         box-shadow: 0 10px 10px rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(10px);
         top: 15px;
         left: 15px;
         right: 10px;
@@ -211,7 +226,7 @@
         position: relative;
         display: flex;
         z-index: 0;
-        background-color: rgba(75, 75, 75,0.5);
+        background-color: rgba(75, 75, 75, 0.5);
         border-radius: 20px;
         width: auto;
         height: auto;
