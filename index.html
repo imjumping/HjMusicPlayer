@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>HougeJump Music Player</title>
+    <style>
+      * {
+        -webkit-user-select: none; /* Chrome/Safari/Edge */
+        user-select: none; /* 标准语法 */
+      }
+      /* 保留你原来的所有 CSS 样式 */
+      html {
+        font-size: 20px;
+      }
+      body {
+        font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        min-height: 100vh;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+      }
+      h1 {
+        color: aqua;
+        font-family: 'Ubuntu';
+        margin-top: 0;
+        padding-top: 20px;
+      }
+      span {
+        color: blueviolet;
+        background-color: aquamarine;
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Roboto,
+          Oxygen,
+          Ubuntu,
+          Cantarell,
+          "Open Sans",
+          "Helvetica Neue",
+          sans-serif;
+        transition: all 0.2s ease-out;
+        font-size: 30px;
+        border-radius: 10px;
+        display: inline-block;
+        padding: 0 5px;
+      }
+      p {
+        color: white;
+        font-size: 30px;
+        font-family: serif;
+      }
+      span:hover {
+        color: blue;
+        border-radius: 13px;
+        font-size: 32px;
+      }
+      img {
+        border-radius: 50px;
+        transition: all 0.6s cubic-bezier(0.34, 1.2, 0.64, 1);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        width: 90px;
+        height: 90px;
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        -webkit-app-region: no-drag;
+        z-index: 3;
+      }
+      img:hover {
+        border-radius: 40px;
+        transform: rotate(2deg);
+        box-shadow: 0 5px 15px rgba(171, 171, 171, 0.3);
+      }
+      main {
+        flex: 1 1 auto;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        min-height: 0;
+        overflow-y: auto;
+        z-index: 1;
+      }
+      footer {
+        flex: 0 0 auto;
+        display: flex;
+        justify-content: center;
+        padding: 20px;
+        margin: 0;
+      }
+      .playbtn {
+        border-radius: 50px;
+        background-color: aqua;
+        border: none;
+        color: rgb(0, 0, 0);
+        cursor: pointer;
+        width: 100px;
+        height: 100px;
+        transition: all 0.3s cubic-bezier(0.25, -0.55, 0.25, 1.55);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        font-size: 50px;
+        -webkit-app-region: no-drag;
+        z-index: 3;
+      }
+      .playbtn:hover {
+        border-radius: 60px;
+        background-color: rgb(43, 226, 147);
+        transform: scale(1.1);
+        color: white;
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+      }
+      .playbtn:active {
+        border-radius: 20px;
+        transform: scale(0.8);
+        color: rgb(42, 42, 42);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+      }
+      .clsbtn {
+        background: none;
+        border: 2px solid rgba(0, 255, 255, 0.3);
+        color: aqua;
+        width: 70px;
+        height: 70px;
+        border-radius: 30px;
+        font-size: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease-out;
+        background-color: rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(2px);
+        padding: 0;
+        line-height: 1;
+        margin: 10px 5px;
+        position: absolute;
+        top: 25px;
+        -webkit-app-region: no-drag;
+        z-index: 3;
+      }
+      #minihua {
+        right: 180px;
+      }
+      #maxhua {
+        right: 100px;
+      }
+      #closehua {
+        right: 20px;
+      }
+      .clsbtn:hover {
+        border-color: aqua;
+        background-color: rgba(0, 255, 255, 0.2);
+        transform: scale(1.1);
+        border-radius: 20px;
+        color: white;
+      }
+      .clsbtn:active {
+        transform: scale(0.9);
+        background-color: aqua;
+        color: black;
+      }
+      .window-content {
+        position: fixed;
+        top: 22px;
+        left: 22px;
+        right: 22px;
+        bottom: 22px;
+        background-color: rgb(43, 43, 43);
+        border-radius: 50px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        display: flex;
+        flex-direction: column;
+        padding: 0;
+        margin: 0;
+        overflow: hidden;
+      }
+      .drag-area {
+        position: absolute;
+        background-color: rgb(185, 185, 185);
+        box-shadow: 0 10px 10px rgba(0, 0, 0, 0.5);
+        top: 15px;
+        left: 15px;
+        right: 10px;
+        height: 100px;
+        -webkit-app-region: drag;
+        z-index: 1;
+        border-radius: 50px;
+      }
+      #musicname {
+        padding-left: 120px;
+        position: relative;
+        z-index: 3;
+      }
+      #musicauthor {
+        position: relative;
+        z-index: 3;
+      }
+      .lyricBox {
+        position: relative;
+        display: flex;
+        z-index: 0;
+        background-color: rgb(75, 75, 75);
+        border-radius: 20px;
+        width: auto;
+        height: auto;
+        min-height: 200px;
+        font-size: 30px;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        box-shadow: 0 10px 10px rgba(0, 0, 0, 0.5);
+      }
+      .lyricBox p {
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Roboto,
+          Oxygen,
+          Ubuntu,
+          Cantarell,
+          "Open Sans",
+          "Helvetica Neue",
+          sans-serif;
+
+        -webkit-user-select: text;
+        user-select: text;
+        text-shadow: 1px 10px 10px rgba(0, 0, 0, 0.3);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="window-content">
+      <div class="drag-area"></div>
+      <img src="res/jumplayer.png" alt="1+1=3" />
+      <button class="clsbtn" id="minihua">_</button>
+      <button class="clsbtn" id="maxhua">🙄</button>
+      <button class="clsbtn" id="closehua">😵</button>
+      <main>
+        <p id="musicname">name<span id="musicauthor">author</span></p>
+
+        <div class="lyricBox">
+          <p>等待上传lrc文件(`OvO,)</p>
+        </div>
+      </main>
+      <footer>
+        <button class="playbtn" id="playButton">▶</button>
+      </footer>
+    </div>
+
+    <script>
+      const playBtn = document.getElementById("playButton");
+      var isPlaying = false;
+
+      playBtn.addEventListener("click", function () {
+        if (isPlaying == false) {
+          playBtn.textContent = "⏸";
+          isPlaying = true;
+        } else {
+          playBtn.textContent = "▶";
+          isPlaying = false;
+        }
+      });
+
+      // 窗口控制
+      if (window.electronAPI) {
+        document.getElementById("minihua").addEventListener("click", () => {
+          window.electronAPI.minimizeWindow();
+        });
+
+        const maxBtn = document.getElementById("maxhua");
+        maxBtn.addEventListener("click", () => {
+          window.electronAPI.maximizeWindow();
+        });
+
+        window.electronAPI.onMaximize((isMaximized) => {
+          maxBtn.textContent = isMaximized ? "😤" : "🙄";
+        });
+
+        document.getElementById("closehua").addEventListener("click", () => {
+          window.electronAPI.closeWindow();
+        });
+      }
+    </script>
+  </body>
+</html>
