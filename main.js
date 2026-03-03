@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 const { app, BrowserWindow, Menu, ipcMain, screen } = require('electron');
 const path = require('path');
 

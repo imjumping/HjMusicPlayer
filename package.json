@@ -12,8 +12,5 @@
   },
   "devDependencies": {
     "electron": "^40.6.1"
-  },
-  "dependencies": {
-    "libvlc": "^0.0.2"
   }
 }
