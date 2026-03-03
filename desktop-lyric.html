@@ -1,253 +1,223 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>桌面歌词</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      user-select: none;
-      -webkit-user-select: none;
-    }
-    html, body {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: transparent;
-    }
-    body {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: 'Microsoft YaHei', sans-serif;
-    }
-    .lyric-container {
-      width: 100%;
-      padding: 15px 20px;
-      background: rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(10px);
-      border-radius: 50px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-      text-align: center;
-      margin: 0 10px;
-      position: relative;
-      -webkit-app-region: no-drag;
-    }
-    .song-info {
-      font-size: 14px;
-      color: rgba(255, 255, 255, 0.6);
-      margin-bottom: 8px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      -webkit-app-region: no-drag;
-    }
-    .current-line {
-      font-size: 24px;
-      font-weight: bold;
-      color: #fff;
-      text-shadow: 0 0 20px cyan, 0 0 40px blue;
-      margin-bottom: 5px;
-      min-height: 36px;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      -webkit-app-region: no-drag;
-    }
-    .next-line {
-      font-size: 18px;
-      color: rgba(255, 255, 255, 0.5);
-      text-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      -webkit-app-region: no-drag;
-    }
-    .word {
-      display: inline-block;
-      transition: all 0.2s ease;
-      margin: 0 2px;
-      -webkit-app-region: no-drag;
-    }
-    .word.played {
-      color: #ff6b6b;
-      transform: scale(1.05);
-      text-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
-    }
-    .word.current {
-      color: #ffd700;
-      transform: scale(1.15);
-      text-shadow: 0 0 20px gold;
-      font-weight: bold;
-    }
-    .progress-bar {
-      width: 100%;
-      height: 3px;
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 3px;
-      margin-top: 10px;
-      overflow: hidden;
-      -webkit-app-region: no-drag;
-    }
-    .progress-fill {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, cyan, magenta);
-      border-radius: 3px;
-      transition: width 0.1s linear;
-    }
-    .control-area {
-      position: absolute;
-      top: 5px;
-      right: 5px;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-      display: flex;
-      gap: 5px;
-      -webkit-app-region: no-drag;
-      z-index: 100;
-    }
-    .lyric-container:hover .control-area {
-      opacity: 1;
-    }
-    .control-btn {
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      background: rgba(0, 0, 0, 0.8);
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      color: white;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 16px;
-      transition: all 0.2s ease;
-      backdrop-filter: blur(5px);
-      -webkit-app-region: no-drag;
-    }
-    .control-btn:hover {
-      transform: scale(1.1);
-      background: rgba(0, 255, 255, 0.5);
-    }
-    .control-btn.locked {
-      background: rgba(255, 215, 0, 0.6);
-      color: black;
-    }
-    .waiting {
-      color: rgba(255, 255, 255, 0.5);
-      font-size: 18px;
-      font-style: italic;
-    }
-  </style>
-</head>
-<body>
-  <div class="lyric-container" id="lyricContainer">
-    <div class="song-info" id="songInfo">未播放 - 等待歌词...</div>
-    <div class="current-line" id="currentLine">
-      <span class="waiting">🎵 等待歌词上传 🎵</span>
-    </div>
-    <div class="next-line" id="nextLine"></div>
-    <div class="progress-bar">
-      <div class="progress-fill" id="progressFill"></div>
-    </div>
-
-    <div class="control-area">
-      <button class="control-btn" id="lockBtn" title="锁定/解锁位置">🔒</button>
-      <button class="control-btn" id="closeBtn" title="关闭桌面歌词">✕</button>
-    </div>
-  </div>
-
-  <script>
-    const { ipcRenderer } = require('electron');
-
-    const container = document.getElementById('lyricContainer');
-    const songInfo = document.getElementById('songInfo');
-    const currentLine = document.getElementById('currentLine');
-    const nextLine = document.getElementById('nextLine');
-    const progressFill = document.getElementById('progressFill');
-    const lockBtn = document.getElementById('lockBtn');
-    const closeBtn = document.getElementById('closeBtn');
-
-    let isLocked = true; // 默认锁定（鼠标穿透）
-
-    // 监听歌词更新
-    ipcRenderer.on('lyric-update', (event, data) => {
-      updateLyric(data);
-    });
-
-    function updateLyric(data) {
-      if (data.songName) {
-        songInfo.textContent = `${data.songName} - ${data.artist || '未知艺术家'}`;
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>桌面歌词</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        user-select: none;
+        -webkit-user-select: none;
       }
-      if (data.progress !== undefined) {
-        progressFill.style.width = data.progress + '%';
+      html,
+      body {
+        width: 90%;
+        height: 90%;
+        overflow: hidden;
+        background: transparent;
       }
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "Microsoft YaHei", sans-serif;
+      }
+      .lyric-container {
+        width: 100%;
+        padding: 15px 20px;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(10px);
+        border-radius: 50px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        text-align: center;
+        margin: 0 10px;
+        position: relative;
+        -webkit-app-region: drag; /* 整个容器可拖动 */
+      }
+      .song-info {
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.6);
+        margin-bottom: 8px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        -webkit-app-region: no-drag;
+      }
+      .current-line {
+        font-size: 24px;
+        font-weight: bold;
+        color: #fff;
+        text-shadow:
+          0 0 20px cyan,
+          0 0 40px blue;
+        margin-bottom: 5px;
+        min-height: 36px;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        -webkit-app-region: no-drag;
+      }
+      .next-line {
+        font-size: 18px;
+        color: rgba(255, 255, 255, 0.5);
+        text-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        -webkit-app-region: no-drag;
+      }
+      .word {
+        display: inline-block;
+        transition: all 0.2s ease;
+        margin: 0 2px;
+        -webkit-app-region: no-drag;
+      }
+      .word.played {
+        color: #ff6b6b;
+        transform: scale(1.05);
+        text-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+      }
+      .word.current {
+        color: #ffd700;
+        transform: scale(1.15);
+        text-shadow: 0 0 20px gold;
+        font-weight: bold;
+      }
+      .progress-bar {
+        width: 100%;
+        height: 3px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 3px;
+        margin-top: 10px;
+        overflow: hidden;
+        -webkit-app-region: no-drag;
+      }
+      .progress-fill {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, cyan, magenta);
+        border-radius: 3px;
+        transition: width 0.1s linear;
+      }
+      .control-area {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        display: flex;
+        gap: 5px;
+        -webkit-app-region: no-drag;
+        z-index: 100;
+      }
+      .lyric-container:hover .control-area {
+        opacity: 1;
+      }
+      .control-btn {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        transition: all 0.2s ease;
+        backdrop-filter: blur(5px);
+        -webkit-app-region: no-drag;
+      }
+      .control-btn:hover {
+        transform: scale(1.1);
+        background: rgba(255, 0, 0, 0.5);
+      }
+      .control-btn:active {
+        transform: scale(0.96);
+        background: rgba(255, 33, 33, 0.8);
+      }
+      .waiting {
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 18px;
+        font-style: italic;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="lyric-container" id="lyricContainer">
+      <div class="song-info" id="songInfo">未播放 - 等待歌词...</div>
+      <div class="current-line" id="currentLine">
+        <span class="waiting">🎵 等待歌词上传 🎵</span>
+      </div>
+      <div class="next-line" id="nextLine"></div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
 
-      currentLine.innerHTML = '';
-      if (data.words && data.words.length > 0) {
-        data.words.forEach((word, idx) => {
-          const span = document.createElement('span');
-          span.className = 'word';
-          if (word.played) span.classList.add('played');
-          if (word.current) span.classList.add('current');
-          span.textContent = word.text + ' ';
-          currentLine.appendChild(span);
+      <div class="control-area">
+        <button class="control-btn" id="closeBtn" title="关闭桌面歌词">
+          ✕
+        </button>
+      </div>
+    </div>
+
+    <script>
+      const container = document.getElementById("lyricContainer");
+      const songInfo = document.getElementById("songInfo");
+      const currentLine = document.getElementById("currentLine");
+      const nextLine = document.getElementById("nextLine");
+      const progressFill = document.getElementById("progressFill");
+      const closeBtn = document.getElementById("closeBtn");
+
+      // 监听歌词更新
+      if (window.electronAPI && window.electronAPI.onLyricUpdate) {
+        window.electronAPI.onLyricUpdate((data) => {
+          updateLyric(data);
         });
-      } else if (data.currentLine) {
-        currentLine.textContent = data.currentLine;
-      } else {
-        const waiting = document.createElement('span');
-        waiting.className = 'waiting';
-        waiting.textContent = '🎵 等待歌词 🎵';
-        currentLine.appendChild(waiting);
       }
 
-      nextLine.textContent = data.nextLine || '';
-    }
+      function updateLyric(data) {
+        if (data.songName) {
+          songInfo.textContent = `${data.songName} - ${data.artist || "未知艺术家"}`;
+        }
+        if (data.progress !== undefined) {
+          progressFill.style.width = data.progress + "%";
+        }
 
-    // 鼠标进入容器时，如果处于解锁状态，则关闭穿透（使窗口可交互）
-    container.addEventListener('mouseenter', () => {
-      if (!isLocked) {
-        ipcRenderer.send('lock-desktop-lyric', false);
+        currentLine.innerHTML = "";
+        if (data.words && data.words.length > 0) {
+          data.words.forEach((word) => {
+            const span = document.createElement("span");
+            span.className = "word";
+            if (word.played) span.classList.add("played");
+            if (word.current) span.classList.add("current");
+            span.textContent = word.text + " ";
+            currentLine.appendChild(span);
+          });
+        } else if (data.currentLine) {
+          currentLine.textContent = data.currentLine;
+        } else {
+          const waiting = document.createElement("span");
+          waiting.className = "waiting";
+          waiting.textContent = "🎵 等待歌词 🎵";
+          currentLine.appendChild(waiting);
+        }
+
+        nextLine.textContent = data.nextLine || "";
       }
-    });
 
-    // 鼠标离开容器时，如果处于解锁状态，则重新开启穿透
-    container.addEventListener('mouseleave', () => {
-      if (!isLocked) {
-        ipcRenderer.send('lock-desktop-lyric', true);
-      }
-    });
-
-    // 锁定按钮点击
-    lockBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      isLocked = !isLocked;
-      lockBtn.textContent = isLocked ? '🔒' : '🔓';
-      lockBtn.classList.toggle('locked', !isLocked);
-      // 立即应用穿透状态
-      ipcRenderer.send('lock-desktop-lyric', isLocked);
-    });
-
-    // 关闭按钮点击
-    closeBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      ipcRenderer.send('toggle-desktop-lyric', false);
-    });
-
-    // 双击容器切换锁定状态（方便用户）
-    container.addEventListener('dblclick', (e) => {
-      e.stopPropagation();
-      lockBtn.click();
-    });
-
-    // 初始发送锁定状态
-    ipcRenderer.send('lock-desktop-lyric', isLocked);
-  </script>
-</body>
+      // 关闭按钮点击
+      closeBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (window.electronAPI && window.electronAPI.toggleDesktopLyric) {
+          window.electronAPI.toggleDesktopLyric(false);
+        }
+      });
+    </script>
+  </body>
 </html>

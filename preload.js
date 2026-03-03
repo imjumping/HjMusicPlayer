@@ -14,5 +14,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // 桌面歌词功能
   toggleDesktopLyric: (show) => ipcRenderer.send('toggle-desktop-lyric', show),
   updateDesktopLyric: (data) => ipcRenderer.send('update-desktop-lyric', data),
-  lockDesktopLyric: (locked) => ipcRenderer.send('lock-desktop-lyric', locked)
+  lockDesktopLyric: (locked) => ipcRenderer.send('lock-desktop-lyric', locked),
+
+  // 监听歌词更新
+  onLyricUpdate: (callback) => {
+    ipcRenderer.on('lyric-update', (event, data) => callback(data));
+  }
 });
