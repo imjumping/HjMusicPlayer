@@ -162,7 +162,7 @@ footer {
   left: 22px;
   right: 22px;
   bottom: 22px;
-  background-image: url("/res/Happy.png");
+  background-image: url("res/Happy.png");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
